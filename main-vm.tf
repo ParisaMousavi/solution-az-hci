@@ -50,7 +50,7 @@ resource "azurerm_network_interface" "this_win" {
     name                          = "internal"
     subnet_id                     = data.terraform_remote_state.network.outputs.subnets["vm-win"].id
     private_ip_address_allocation = "Dynamic"
-    # public_ip_address_id          = azurerm_public_ip.this_win.id
+    public_ip_address_id          = azurerm_public_ip.this_win.id
   }
 }
 
@@ -71,16 +71,16 @@ module "nsg_win" {
   resource_group_name = module.resourcegroup.name
   security_rules = [
     {
-      name                       = "HTTP"
-      priority                   = 100
-      direction                  = "Inbound"
+      name                       = "RDP"
+      priority                   = 110
       access                     = "Allow"
+      direction                  = "Inbound"
       protocol                   = "Tcp"
-      description                = "HTTP: Allow inbound from any to 80"
-      source_port_range          = "*"
-      destination_port_range     = "80"
-      source_address_prefix      = "*"
+      description                = "RDP: Allow inbound from any to 3389"
       destination_address_prefix = "*"
+      destination_port_range     = "3389"
+      source_address_prefix      = "*"
+      source_port_range          = "*"
     }
   ]
   additional_tags = {
