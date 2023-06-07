@@ -19,7 +19,10 @@ module "resourcegroup" {
 }
 
 #-----------------------------------------------
-#  Deploy Hyper-V supported host server
+# Deploy Hyper-V supported host server
+# Install hyper-v on machine
+# https://learn.microsoft.com/en-us/windows-server/virtualization/hyper-v/get-started/install-the-hyper-v-role-on-windows-server
+# I used this command: Install-WindowsFeature -Name Hyper-V -ComputerName <computer_name> -IncludeManagementTools -Restart
 #-----------------------------------------------
 module "vm_name" {
   source             = "github.com/ParisaMousavi/az-naming//vm?ref=main"
@@ -34,9 +37,10 @@ resource "azurerm_public_ip" "this_win" {
   location            = module.resourcegroup.location
   resource_group_name = module.resourcegroup.name
   allocation_method   = "Static"
-
+  sku                 = "Standard" # because I use it for bastion must be standard
   tags = {
-    environment = "Production"
+    CostCenter = "ABC000CBA"
+    By         = "parisamoosavinezhad@hotmail.com"
   }
 }
 
@@ -50,7 +54,8 @@ resource "azurerm_network_interface" "this_win" {
     name                          = "internal"
     subnet_id                     = data.terraform_remote_state.network.outputs.subnets["vm-win"].id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.this_win.id
+    # public_ip_address_id          = azurerm_public_ip.this_win.id
+    # I added the PIP to the Bastion instead of VM
   }
 }
 
@@ -120,20 +125,14 @@ resource "azurerm_windows_virtual_machine" "this_win" {
 
 }
 
-resource "azurerm_virtual_machine_extension" "example" {
-  name                       = "vm_extension_install_iis"
-  virtual_machine_id         = azurerm_windows_virtual_machine.this_win.id
-  publisher                  = "Microsoft.Compute"
-  type                       = "CustomScriptExtension"
-  type_handler_version       = "1.10"
-  auto_upgrade_minor_version = true
-  settings                   = <<SETTINGS
-{
-	"commandToExecute": "powershell.exe Install-WindowsFeature -name Web-Server -IncludeManagementTools && powershell.exe remove-item 'C:\\inetpub\\wwwroot\\iisstart.htm' && powershell.exe Add-Content -Path 'C:\\inetpub\\wwwroot\\iisstart.htm' -Value $($env:computername)"
-}
-SETTINGS
-  tags = {
-    CostCenter = "ABC000CBA"
-    By         = "parisamoosavinezhad@hotmail.com"
+resource "azurerm_bastion_host" "this" {
+  name                = "examplebastion"
+  location            = module.resourcegroup.location
+  resource_group_name = module.resourcegroup.name
+  ip_configuration {
+    name                 = "configuration"
+    subnet_id            = data.terraform_remote_state.network.outputs.subnets["AzureBastionSubnet"].id
+    public_ip_address_id = azurerm_public_ip.this_win.id
   }
 }
+

@@ -8,8 +8,8 @@ module "stg_name" {
 
 resource "azurerm_storage_account" "this" {
   name                     = module.stg_name.result
-  location                 = module.resourcegroup.location
-  resource_group_name      = module.resourcegroup.name
+  location                 = var.location
+  resource_group_name      = data.terraform_remote_state.parent.outputs.resource_group_name
   account_tier             = "Standard"
   account_replication_type = "LRS"
 }
