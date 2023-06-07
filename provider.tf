@@ -17,8 +17,9 @@ terraform {
 
 provider "azurerm" {
   features {
-    resource_group {
-      prevent_deletion_if_contains_resources = false
-    }
+    # I have commended out these lines to prevent the Azure Storage File share deletion
+    # resource_group {
+    #   prevent_deletion_if_contains_resources = false
+    # }
   }
 }

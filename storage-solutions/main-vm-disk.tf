@@ -10,9 +10,9 @@ resource "azurerm_managed_disk" "this" {
   name                 = module.vm_disk_name.result
   location                 = var.location
   resource_group_name      = data.terraform_remote_state.parent.outputs.resource_group_name
-  storage_account_type = "Premium_LRS"
+  storage_account_type = "StandardSSD_LRS"
   create_option        = "Empty"
-  disk_size_gb         = 60
+  disk_size_gb         = 256
 }
 
 resource "azurerm_virtual_machine_data_disk_attachment" "this" {

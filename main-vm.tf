@@ -103,7 +103,7 @@ resource "azurerm_windows_virtual_machine" "this_win" {
   name                = module.vm_name.result
   location            = module.resourcegroup.location
   resource_group_name = module.resourcegroup.name
-  size                = "Standard_D4s_v4" #"Standard_B2s" #"Standard_F2"
+  size                = "Standard_E16s_v4" #"Standard_B2s" #"Standard_F2"
   admin_username      = "adminuser"
   admin_password      = "P@$$w0rd1234!"
   network_interface_ids = [
@@ -135,4 +135,3 @@ resource "azurerm_bastion_host" "this" {
     public_ip_address_id = azurerm_public_ip.this_win.id
   }
 }
-
