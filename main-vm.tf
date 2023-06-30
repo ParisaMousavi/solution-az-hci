@@ -60,51 +60,51 @@ resource "azurerm_network_interface" "this_win" {
 }
 
 
-module "nsg_win_name" {
-  source             = "github.com/ParisaMousavi/az-naming//nsg?ref=main"
-  prefix             = var.prefix
-  name               = var.name
-  stage              = var.stage
-  assembly           = "win"
-  location_shortname = var.location_shortname
-}
+# module "nsg_win_name" {
+#   source             = "github.com/ParisaMousavi/az-naming//nsg?ref=main"
+#   prefix             = var.prefix
+#   name               = var.name
+#   stage              = var.stage
+#   assembly           = "win"
+#   location_shortname = var.location_shortname
+# }
 
-module "nsg_win" {
-  source              = "github.com/ParisaMousavi/az-nsg-v2?ref=main"
-  name                = module.nsg_win_name.result
-  location            = module.resourcegroup.location
-  resource_group_name = module.resourcegroup.name
-  security_rules = [
-    {
-      name                       = "RDP"
-      priority                   = 110
-      access                     = "Allow"
-      direction                  = "Inbound"
-      protocol                   = "Tcp"
-      description                = "RDP: Allow inbound from any to 3389"
-      destination_address_prefix = "*"
-      destination_port_range     = "3389"
-      source_address_prefix      = "*"
-      source_port_range          = "*"
-    }
-  ]
-  additional_tags = {
-    CostCenter = "ABC000CBA"
-    By         = "parisamoosavinezhad@hotmail.com"
-  }
-}
+# module "nsg_win" {
+#   source              = "github.com/ParisaMousavi/az-nsg-v2?ref=main"
+#   name                = module.nsg_win_name.result
+#   location            = module.resourcegroup.location
+#   resource_group_name = module.resourcegroup.name
+#   security_rules = [
+#     {
+#       name                       = "RDP"
+#       priority                   = 110
+#       access                     = "Allow"
+#       direction                  = "Inbound"
+#       protocol                   = "Tcp"
+#       description                = "RDP: Allow inbound from any to 3389"
+#       destination_address_prefix = "*"
+#       destination_port_range     = "3389"
+#       source_address_prefix      = "*"
+#       source_port_range          = "*"
+#     }
+#   ]
+#   additional_tags = {
+#     CostCenter = "ABC000CBA"
+#     By         = "parisamoosavinezhad@hotmail.com"
+#   }
+# }
 
-resource "azurerm_network_interface_security_group_association" "this_win" {
-  network_interface_id      = azurerm_network_interface.this_win.id
-  network_security_group_id = module.nsg_win.id
-}
+# resource "azurerm_network_interface_security_group_association" "this_win" {
+#   network_interface_id      = azurerm_network_interface.this_win.id
+#   network_security_group_id = module.nsg_win.id
+# }
 
 resource "azurerm_windows_virtual_machine" "this_win" {
   name                = module.vm_name.result
   location            = module.resourcegroup.location
   resource_group_name = module.resourcegroup.name
-  size                = "Standard_E16s_v4" #"Standard_B2s" #"Standard_F2"
-  admin_username      = "adminuser" # administrator
+  size                = "Standard_D4s_v3" # "Standard_E16ds_v4" # "Standard_B2s" # "Standard_F2" 
+  admin_username      = "adminuser"     # administrator
   admin_password      = "P@$$w0rd1234!"
   network_interface_ids = [
     azurerm_network_interface.this_win.id,
@@ -125,13 +125,25 @@ resource "azurerm_windows_virtual_machine" "this_win" {
 
 }
 
-resource "azurerm_bastion_host" "this" {
-  name                = "examplebastion"
-  location            = module.resourcegroup.location
-  resource_group_name = module.resourcegroup.name
-  ip_configuration {
-    name                 = "configuration"
-    subnet_id            = data.terraform_remote_state.network.outputs.subnets["AzureBastionSubnet"].id
-    public_ip_address_id = azurerm_public_ip.this_win.id
+# Install-WindowsFeature -Name Hyper-V -ComputerName <computer_name> -IncludeManagementTools -Restart
+# used this link for installing IIS: https://github.com/MicrosoftLearning/AZ-104-MicrosoftAzureAdministrator/blob/master/Allfiles/Labs/08/az104-08-install_IIS.ps1
+resource "azurerm_virtual_machine_extension" "install_hyperv" {
+  depends_on = [
+    azurerm_windows_virtual_machine.this_win
+  ]
+  name                       = "vm_extension_hyperv"
+  virtual_machine_id         = azurerm_windows_virtual_machine.this_win.id
+  publisher                  = "Microsoft.Compute"
+  type                       = "CustomScriptExtension"
+  type_handler_version       = "1.10"
+  auto_upgrade_minor_version = true
+  settings                   = <<SETTINGS
+{
+	"commandToExecute": "powershell.exe Install-WindowsFeature -Name Hyper-V -IncludeManagementTools && powershell.exe Start-BitsTransfer -Source 'https://aka.ms/edge-msi' -Destination 'C:\\Downloads\\MicrosoftEdgeEnterpriseX64.msi' && powershell.exe Start-Process -Wait -Filepath msiexec.exe -Argumentlist '/i C:\\Downloads\\MicrosoftEdgeEnterpriseX64.msi /q' "
+}
+SETTINGS
+  tags = {
+    CostCenter = "ABC000CBA"
+    By         = "parisamoosavinezhad@hotmail.com"
   }
 }
