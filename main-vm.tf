@@ -104,7 +104,7 @@ resource "azurerm_windows_virtual_machine" "this_win" {
   location            = module.resourcegroup.location
   resource_group_name = module.resourcegroup.name
   size                = "Standard_D4s_v3" # "Standard_E16ds_v4" # "Standard_B2s" # "Standard_F2" 
-  admin_username      = "adminuser"     # administrator
+  admin_username      = "adminuser"       # administrator
   admin_password      = "P@$$w0rd1234!"
   network_interface_ids = [
     azurerm_network_interface.this_win.id,

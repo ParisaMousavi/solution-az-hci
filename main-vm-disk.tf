@@ -9,8 +9,8 @@ module "vm_disk_name" {
 resource "azurerm_managed_disk" "this" {
   count                = 1
   name                 = "${module.vm_disk_name.result}-${count.index}"
-  location            = module.resourcegroup.location
-  resource_group_name = module.resourcegroup.name
+  location             = module.resourcegroup.location
+  resource_group_name  = module.resourcegroup.name
   storage_account_type = "StandardSSD_LRS"
   create_option        = "Empty"
   disk_size_gb         = 200
