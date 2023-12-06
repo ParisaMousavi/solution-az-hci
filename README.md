@@ -11,3 +11,6 @@ git remote set-url --add --push origin git@ssh.dev.azure.com:v3/p-moosavinezhad/
 
 git remote set-url --add --push origin git@github.com:ParisaMousavi/solution-az-hci.git
 ```
+
+Related links
+https://learn.microsoft.com/en-us/azure-stack/hci/deploy/single-server
