@@ -47,15 +47,8 @@ $vmMacs = @()
 foreach ($VM in $VMPlacement) {
     Write-Verbose "Generating the VM: $VM" 
 
-    $params = @{
-
-        VMHost     = $VM.VMHost
-        AzSHOST    = $VM.AzSHOST
-        HostVMPath = $HostVMPath
-        VMSwitch   = $VMSwitch
-        SDNConfig  = $SDNConfig
-
-    }
+    $VMHost = $VM.VMHost
+    $AzSHOST = $VM.AzSHOST
 
     $parentpath = "$HostVMPath\GUI.vhdx"
     $coreparentpath = "$HostVMPath\AzSHCI.vhdx"
