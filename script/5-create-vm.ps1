@@ -63,36 +63,42 @@ foreach ($VM in $VMPlacement) {
         $NestedVMMemoryinGB = $SDNConfig.NestedVMMemoryinGB
         $AzSMGMTMemoryinGB = $SDNConfig.AzSMGMTMemoryinGB
 
-
-        Write-Host "Create Differencing Disk. Note: AzSMGMT is GUI"
+        # Create Differencing Disk. Note: AzSMGMT is GUI
 
         if ($AzSHOST -eq "AzSMGMT") {
 
-            $ans = Get-VHD -Path "$HostVMPath\$AzSHOST.vhdx"
-            IIf !$ans ( $VHDX1 = New-VHD -ParentPath $parentpath -Path "$HostVMPath\$AzSHOST.vhdx" -Differencing) Write-Host "VHD $HostVMPath\$AzSHOST.vhdx exists."
-            
-            # $VHDX2 = New-VHD -Path "$HostVMPath\$AzSHOST-Data.vhdx" -SizeBytes 268435456000 -Dynamic
-            # $NestedVMMemoryinGB = $AzSMGMTMemoryinGB
+            iff (!(Test-VHD -Path "$HostVMPath\$AzSHOST.vhdx")) $VHDX1 = New-VHD -ParentPath $parentpath -Path "$HostVMPath\$AzSHOST.vhdx" -Differencing 
+            iff (!(Test-VHD -Path "$HostVMPath\$AzSHOST-Data.vhdx")) $VHDX2 = New-VHD -Path "$HostVMPath\$AzSHOST-Data.vhdx" -SizeBytes 268435456000 -Dynamic
+            $NestedVMMemoryinGB = $AzSMGMTMemoryinGB
         }
+    
         Else { 
            
-            $ans = Get-VHD -Path "$HostVMPath\$AzSHOST.vhdx"
-            IIf !$ans ( $VHDX1 = New-VHD -ParentPath $coreparentpath -Path "$HostVMPath\$AzSHOST.vhdx" -Differencing ) Write-Host "VHD $HostVMPath\$AzSHOST.vhdx exists."
-
-            # $VHDX1 = New-VHD -ParentPath $coreparentpath -Path "$HostVMPath\$AzSHOST.vhdx" -Differencing 
-            # $VHDX2 = New-VHD -Path "$HostVMPath\$AzSHOST-Data.vhdx" -SizeBytes 268435456000 -Dynamic
+            iff (!(Test-VHD -Path "$HostVMPath\$AzSHOST.vhdx")) $VHDX1 = New-VHD -ParentPath $coreparentpath -Path "$HostVMPath\$AzSHOST.vhdx" -Differencing 
+            iff (!(Test-VHD -Path "$HostVMPath\$AzSHOST-Data.vhdx")) $VHDX2 = New-VHD -Path "$HostVMPath\$AzSHOST-Data.vhdx" -SizeBytes 268435456000 -Dynamic
     
-            # # Create S2D Storage       
+            # Create S2D Storage       
 
-            # New-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk1.vhdx" -SizeBytes $S2DDiskSize -Dynamic | Out-Null
-            # New-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk2.vhdx" -SizeBytes $S2DDiskSize -Dynamic | Out-Null
-            # New-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk3.vhdx" -SizeBytes $S2DDiskSize -Dynamic | Out-Null
-            # New-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk4.vhdx" -SizeBytes $S2DDiskSize -Dynamic | Out-Null
-            # New-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk5.vhdx" -SizeBytes $S2DDiskSize -Dynamic | Out-Null
-            # New-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk6.vhdx" -SizeBytes $S2DDiskSize -Dynamic | Out-Null    
+            iff (!(Test-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk1.vhdx")) New-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk1.vhdx" -SizeBytes $S2DDiskSize -Dynamic | Out-Null
+            iff (!(Test-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk2.vhdx")) New-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk2.vhdx" -SizeBytes $S2DDiskSize -Dynamic | Out-Null
+            iff (!(Test-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk3.vhdx")) New-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk3.vhdx" -SizeBytes $S2DDiskSize -Dynamic | Out-Null
+            iff (!(Test-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk4.vhdx")) New-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk4.vhdx" -SizeBytes $S2DDiskSize -Dynamic | Out-Null
+            iff (!(Test-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk5.vhdx")) New-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk5.vhdx" -SizeBytes $S2DDiskSize -Dynamic | Out-Null
+            iff (!(Test-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk6.vhdx")) New-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk6.vhdx" -SizeBytes $S2DDiskSize -Dynamic | Out-Null    
     
-        } 
+        }  
+        
+        $params = @{
 
+            Name               = $AzSHOST
+            MemoryStartupBytes = $NestedVMMemoryinGB 
+            VHDPath            = $VHDX1.Path 
+            SwitchName         = $VMSwitch
+            Generation         = 2
+
+        }
+
+        New-VM @params | Out-Null        
 
     }
 }
