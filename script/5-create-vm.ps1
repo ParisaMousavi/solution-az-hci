@@ -74,7 +74,10 @@ foreach ($VM in $VMPlacement) {
                 Write-Host "VHD $HostVMPath\$AzSHOST.vhdx doesn't exist."
                 $VHDX1 = New-VHD -ParentPath $parentpath -Path "$HostVMPath\$AzSHOST.vhdx" -Differencing 
 
-            }else{ Write-Host "VHD $HostVMPath\$AzSHOST.vhdx exist." }          
+            }else{ 
+                Write-Host "VHD $HostVMPath\$AzSHOST.vhdx exist." 
+                $VHDX1 = Get-VHD -Path "$HostVMPath\$AzSHOST.vhdx" 
+            }          
             
             $exists= $false
             try { $exists=(Get-VHD -Path "$HostVMPath\$AzSHOST-Data.vhdx") }
@@ -84,7 +87,10 @@ foreach ($VM in $VMPlacement) {
                 Write-Host "VHD $HostVMPath\$AzSHOST-Data.vhdx doesn't exist."
                 $VHDX2 = New-VHD -Path "$HostVMPath\$AzSHOST-Data.vhdx" -SizeBytes 268435456000 -Dynamic
 
-            }else{ Write-Host "VHD $HostVMPath\$AzSHOST-Data.vhdx exist." }              
+            }else{ 
+                Write-Host "VHD $HostVMPath\$AzSHOST-Data.vhdx exist." 
+                $VHDX2 = Get-VHD -Path "$HostVMPath\$AzSHOST-Data.vhdx"
+            }              
 
 
             $NestedVMMemoryinGB = $AzSMGMTMemoryinGB
@@ -100,7 +106,10 @@ foreach ($VM in $VMPlacement) {
                 Write-Host "VHD $HostVMPath\$AzSHOST.vhdx doesn't exist."
                 $VHDX1 = New-VHD -ParentPath $coreparentpath -Path "$HostVMPath\$AzSHOST.vhdx" -Differencing 
 
-            }else{ Write-Host "VHD $HostVMPath\$AzSHOST.vhdx exist." } 
+            }else{ 
+                Write-Host "VHD $HostVMPath\$AzSHOST.vhdx exist." 
+                $VHDX1 = Get-VHD -Path "$HostVMPath\$AzSHOST.vhdx"
+            } 
 
             $exists= $false
             try { $exists=(Get-VHD -Path "$HostVMPath\$AzSHOST-Data.vhdx") }
@@ -110,7 +119,10 @@ foreach ($VM in $VMPlacement) {
                 Write-Host "VHD $HostVMPath\$AzSHOST-Data.vhdx doesn't exist."
                 $VHDX2 = New-VHD -Path "$HostVMPath\$AzSHOST-Data.vhdx" -SizeBytes 268435456000 -Dynamic
 
-            }else{ Write-Host "VHD $HostVMPath\$AzSHOST-Data.vhdx exist." } 
+            }else{ 
+                Write-Host "VHD $HostVMPath\$AzSHOST-Data.vhdx exist." 
+                $VHDX2 = Get-VHD -Path "$HostVMPath\$AzSHOST-Data.vhdx" 
+            } 
     
             # # Create S2D Storage       
 
@@ -175,17 +187,22 @@ foreach ($VM in $VMPlacement) {
             }else{ Write-Host "VHD $HostVMPath\$AzSHOST-S2D_Disk6.vhdx exist." } 
         }  
         
-        # $params = @{
+        Write-Host  "Create Nested VM $AzSHOST"
 
-        #     Name               = $AzSHOST
-        #     MemoryStartupBytes = $NestedVMMemoryinGB 
-        #     VHDPath            = $VHDX1.Path 
-        #     SwitchName         = $VMSwitch
-        #     Generation         = 2
+        $params = @{
 
-        # }
+            Name               = $AzSHOST
+            MemoryStartupBytes = $NestedVMMemoryinGB 
+            VHDPath            = $VHDX1.Path 
+            SwitchName         = $VMSwitch
+            Generation         = 2
 
-        # New-VM @params | Out-Null        
+        }
+        $exists= $false
+        try { $exists=(Get-VM -Name $AzSHOST) }
+        catch { $exists=$false  }
+        if (!($exists)) { New-VM @params | Out-Null  }
+        else{ Write-Host "VM $AzSHOST exist." } 
 
     }
 }
