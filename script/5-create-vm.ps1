@@ -204,5 +204,39 @@ foreach ($VM in $VMPlacement) {
         if (!($exists)) { New-VM @params | Out-Null  }
         else{ Write-Host "VM $AzSHOST exist." } 
 
+        Add-VMHardDiskDrive -VMName $AzSHOST -Path $VHDX2.Path
+
+        if ($AzSHOST -ne "AzSMGMT") {
+
+            Add-VMHardDiskDrive -Path "$HostVMPath\$AzSHOST-S2D_Disk1.vhdx" -VMName $AzSHOST | Out-Null
+            Add-VMHardDiskDrive -Path "$HostVMPath\$AzSHOST-S2D_Disk2.vhdx" -VMName $AzSHOST | Out-Null
+            Add-VMHardDiskDrive -Path "$HostVMPath\$AzSHOST-S2D_Disk3.vhdx" -VMName $AzSHOST | Out-Null
+            Add-VMHardDiskDrive -Path "$HostVMPath\$AzSHOST-S2D_Disk4.vhdx" -VMName $AzSHOST | Out-Null
+            Add-VMHardDiskDrive -Path "$HostVMPath\$AzSHOST-S2D_Disk5.vhdx" -VMName $AzSHOST | Out-Null
+            Add-VMHardDiskDrive -Path "$HostVMPath\$AzSHOST-S2D_Disk6.vhdx" -VMName $AzSHOST | Out-Null
+
+        }
+
+        Set-VM -Name $AzSHOST -ProcessorCount 4 -AutomaticStartAction Start
+
+        $exists= $false
+        try { $exists=(Get-VMNetworkAdapter -VMName $AzSHOST -Name "SDN") }
+        catch { $exists=$false  }
+        if (!($exists)) { 
+            Get-VMNetworkAdapter -VMName $AzSHOST | Rename-VMNetworkAdapter -NewName "SDN"
+            Get-VMNetworkAdapter -VMName $AzSHOST | Set-VMNetworkAdapter -DeviceNaming On -StaticMacAddress  ("{0:D12}" -f ( Get-Random -Minimum 0 -Maximum 99999 ))                
+         }
+        else{  Write-Host "Adapter VMName $AzSHOST Name SDN exist." } 
+
+        $exists= $false
+        try { $exists=(Get-VMNetworkAdapter -VMName $AzSHOST -Name "SDN2") }
+        catch { $exists=$false  }
+        if (!($exists)) { 
+            Add-VMNetworkAdapter -VMName $AzSHOST -Name SDN2 -DeviceNaming On -SwitchName $VMSwitch
+         }
+        else{  Write-Host "Adapter VMName $AzSHOST Name SDN2 exist." } 
+       
+        $vmMac = ((Get-VMNetworkAdapter -Name SDN -VMName $AzSHOST).MacAddress) -replace '..(?!$)', '$&-'
+        Write-Verbose "Virtual Machine FABRIC NIC MAC is = $vmMac"
     }
 }
