@@ -1,5 +1,5 @@
 $WarningPreference = "SilentlyContinue"
-$ErrorActionPreference = "Stop" 
+$ErrorActionPreference = "Continue" 
 
 Write-Host "Import Configuration Module"
 $ConfigurationDataFile = '.\AzSHCISandbox-Config.psd1'
@@ -8,7 +8,6 @@ $SDNConfig = Import-PowerShellDataFile -Path $ConfigurationDataFile
 $VerbosePreference = "SilentlyContinue" 
 Import-Module Hyper-V 
 $VerbosePreference = "Continue"
-$ErrorActionPreference = "Stop"
 
 # Set Variables from config file
 
@@ -38,8 +37,8 @@ foreach ($AzSHOST in $AzSHOSTs) {
 $vmMacs = @()
 
 foreach ($VM in $VMPlacement) {
-    Write-Verbose "Generating the VM: $VM" 
 
+    Write-Verbose "Generating the VM: $VM" 
 
     $parentpath = "$HostVMPath\GUI.vhdx"
     $coreparentpath = "$HostVMPath\AzSHCI.vhdx"
@@ -64,41 +63,129 @@ foreach ($VM in $VMPlacement) {
         $AzSMGMTMemoryinGB = $SDNConfig.AzSMGMTMemoryinGB
 
         # Create Differencing Disk. Note: AzSMGMT is GUI
-
+        Write-Host "VHD $HostVMPath\$AzSHOST.vhdx"
         if ($AzSHOST -eq "AzSMGMT") {
 
-            iff (!(Test-VHD -Path "$HostVMPath\$AzSHOST.vhdx")) $VHDX1 = New-VHD -ParentPath $parentpath -Path "$HostVMPath\$AzSHOST.vhdx" -Differencing 
-            iff (!(Test-VHD -Path "$HostVMPath\$AzSHOST-Data.vhdx")) $VHDX2 = New-VHD -Path "$HostVMPath\$AzSHOST-Data.vhdx" -SizeBytes 268435456000 -Dynamic
+            $exists= $false
+            try { $exists=(Get-VHD -Path "$HostVMPath\$AzSHOST.vhdx") }
+            catch { $exists=$false  }
+            if (!($exists)) {
+
+                Write-Host "VHD $HostVMPath\$AzSHOST.vhdx doesn't exist."
+                $VHDX1 = New-VHD -ParentPath $parentpath -Path "$HostVMPath\$AzSHOST.vhdx" -Differencing 
+
+            }else{ Write-Host "VHD $HostVMPath\$AzSHOST.vhdx exist." }          
+            
+            $exists= $false
+            try { $exists=(Get-VHD -Path "$HostVMPath\$AzSHOST-Data.vhdx") }
+            catch { $exists=$false  }
+            if (!($exists)) {
+
+                Write-Host "VHD $HostVMPath\$AzSHOST-Data.vhdx doesn't exist."
+                $VHDX2 = New-VHD -Path "$HostVMPath\$AzSHOST-Data.vhdx" -SizeBytes 268435456000 -Dynamic
+
+            }else{ Write-Host "VHD $HostVMPath\$AzSHOST-Data.vhdx exist." }              
+
+
             $NestedVMMemoryinGB = $AzSMGMTMemoryinGB
         }
     
         Else { 
-           
-            iff (!(Test-VHD -Path "$HostVMPath\$AzSHOST.vhdx")) $VHDX1 = New-VHD -ParentPath $coreparentpath -Path "$HostVMPath\$AzSHOST.vhdx" -Differencing 
-            iff (!(Test-VHD -Path "$HostVMPath\$AzSHOST-Data.vhdx")) $VHDX2 = New-VHD -Path "$HostVMPath\$AzSHOST-Data.vhdx" -SizeBytes 268435456000 -Dynamic
-    
-            # Create S2D Storage       
 
-            iff (!(Test-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk1.vhdx")) New-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk1.vhdx" -SizeBytes $S2DDiskSize -Dynamic | Out-Null
-            iff (!(Test-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk2.vhdx")) New-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk2.vhdx" -SizeBytes $S2DDiskSize -Dynamic | Out-Null
-            iff (!(Test-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk3.vhdx")) New-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk3.vhdx" -SizeBytes $S2DDiskSize -Dynamic | Out-Null
-            iff (!(Test-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk4.vhdx")) New-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk4.vhdx" -SizeBytes $S2DDiskSize -Dynamic | Out-Null
-            iff (!(Test-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk5.vhdx")) New-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk5.vhdx" -SizeBytes $S2DDiskSize -Dynamic | Out-Null
-            iff (!(Test-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk6.vhdx")) New-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk6.vhdx" -SizeBytes $S2DDiskSize -Dynamic | Out-Null    
+            $exists= $false
+            try { $exists=(Get-VHD -Path "$HostVMPath\$AzSHOST.vhdx") }
+            catch { $exists=$false  }
+            if (!($exists)) {
+
+                Write-Host "VHD $HostVMPath\$AzSHOST.vhdx doesn't exist."
+                $VHDX1 = New-VHD -ParentPath $coreparentpath -Path "$HostVMPath\$AzSHOST.vhdx" -Differencing 
+
+            }else{ Write-Host "VHD $HostVMPath\$AzSHOST.vhdx exist." } 
+
+            $exists= $false
+            try { $exists=(Get-VHD -Path "$HostVMPath\$AzSHOST-Data.vhdx") }
+            catch { $exists=$false  }
+            if (!($exists)) {
+
+                Write-Host "VHD $HostVMPath\$AzSHOST-Data.vhdx doesn't exist."
+                $VHDX2 = New-VHD -Path "$HostVMPath\$AzSHOST-Data.vhdx" -SizeBytes 268435456000 -Dynamic
+
+            }else{ Write-Host "VHD $HostVMPath\$AzSHOST-Data.vhdx exist." } 
     
+            # # Create S2D Storage       
+
+            $exists= $false
+            try { $exists=(Get-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk1.vhdx") }
+            catch { $exists=$false  }
+            if (!($exists)) {
+
+                Write-Host "VHD $HostVMPath\$AzSHOST-S2D_Disk1.vhdx doesn't exist."
+                New-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk1.vhdx" -SizeBytes $S2DDiskSize -Dynamic | Out-Null
+
+            }else{ Write-Host "VHD $HostVMPath\$AzSHOST-S2D_Disk1.vhdx exist." } 
+            
+            $exists= $false
+            try { $exists=(Get-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk2.vhdx") }
+            catch { $exists=$false  }
+            if (!($exists)) {
+
+                Write-Host "VHD $HostVMPath\$AzSHOST-S2D_Disk2.vhdx doesn't exist."
+                New-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk2.vhdx" -SizeBytes $S2DDiskSize -Dynamic | Out-Null
+
+            }else{ Write-Host "VHD $HostVMPath\$AzSHOST-S2D_Disk2.vhdx exist." } 
+            
+            $exists= $false
+            try { $exists=(Get-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk3.vhdx") }
+            catch { $exists=$false  }
+            if (!($exists)) {
+
+                Write-Host "VHD $HostVMPath\$AzSHOST-S2D_Disk3.vhdx doesn't exist."
+                New-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk3.vhdx" -SizeBytes $S2DDiskSize -Dynamic | Out-Null
+
+            }else{ Write-Host "VHD $HostVMPath\$AzSHOST-S2D_Disk3.vhdx exist." } 
+
+            $exists= $false
+            try { $exists=(Get-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk4.vhdx") }
+            catch { $exists=$false  }
+            if (!($exists)) {
+
+                Write-Host "VHD $HostVMPath\$AzSHOST-S2D_Disk4.vhdx doesn't exist."
+                New-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk4.vhdx" -SizeBytes $S2DDiskSize -Dynamic | Out-Null
+
+            }else{ Write-Host "VHD $HostVMPath\$AzSHOST-S2D_Disk4.vhdx exist." } 
+
+            $exists= $false
+            try { $exists=(Get-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk5.vhdx") }
+            catch { $exists=$false  }
+            if (!($exists)) {
+
+                Write-Host "VHD $HostVMPath\$AzSHOST-S2D_Disk5.vhdx doesn't exist."
+                New-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk5.vhdx" -SizeBytes $S2DDiskSize -Dynamic | Out-Null
+
+            }else{ Write-Host "VHD $HostVMPath\$AzSHOST-S2D_Disk5.vhdx exist." } 
+
+            $exists= $false
+            try { $exists=(Get-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk6.vhdx") }
+            catch { $exists=$false  }
+            if (!($exists)) {
+
+                Write-Host "VHD $HostVMPath\$AzSHOST-S2D_Disk6.vhdx doesn't exist."
+                New-VHD -Path "$HostVMPath\$AzSHOST-S2D_Disk6.vhdx" -SizeBytes $S2DDiskSize -Dynamic | Out-Null
+
+            }else{ Write-Host "VHD $HostVMPath\$AzSHOST-S2D_Disk6.vhdx exist." } 
         }  
         
-        $params = @{
+        # $params = @{
 
-            Name               = $AzSHOST
-            MemoryStartupBytes = $NestedVMMemoryinGB 
-            VHDPath            = $VHDX1.Path 
-            SwitchName         = $VMSwitch
-            Generation         = 2
+        #     Name               = $AzSHOST
+        #     MemoryStartupBytes = $NestedVMMemoryinGB 
+        #     VHDPath            = $VHDX1.Path 
+        #     SwitchName         = $VMSwitch
+        #     Generation         = 2
 
-        }
+        # }
 
-        New-VM @params | Out-Null        
+        # New-VM @params | Out-Null        
 
     }
 }
