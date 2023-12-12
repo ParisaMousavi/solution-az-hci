@@ -277,5 +277,16 @@ foreach ($VM in $VMPlacement) {
         }     
         
         Enable-VMIntegrationService -VMName $AzSHOST -Name "Guest Service Interface"
+        return $vmMac
     }
+
+    $vmMacs += [pscustomobject]@{
+
+        Hostname = $VM.AzSHOST
+        vmMAC    = $vmMac
+
+    }
+
 }
+
+Write-Host $vmMacs
