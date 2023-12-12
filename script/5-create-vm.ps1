@@ -238,5 +238,44 @@ foreach ($VM in $VMPlacement) {
        
         $vmMac = ((Get-VMNetworkAdapter -Name SDN -VMName $AzSHOST).MacAddress) -replace '..(?!$)', '$&-'
         Write-Verbose "Virtual Machine FABRIC NIC MAC is = $vmMac"
+
+
+        if ($AzSHOST -ne "AzSMGMT") {
+
+            $exists= $false
+            try { $exists=(Get-VMNetworkAdapter -VMName $AzSHOST -Name StorageA) }
+            catch { $exists=$false  }
+            if (!($exists)) { 
+                Add-VMNetworkAdapter -VMName $AzSHOST -SwitchName $VMSwitch -DeviceNaming On -Name StorageA
+             }
+            else{  Write-Host "Adapter VMName $AzSHOST Name StorageA exist." } 
+
+            
+            $exists= $false
+            try { $exists=(Get-VMNetworkAdapter -VMName $AzSHOST -Name StorageB) }
+            catch { $exists=$false  }
+            if (!($exists)) { 
+                Add-VMNetworkAdapter -VMName $AzSHOST -SwitchName $VMSwitch -DeviceNaming On -Name StorageB
+             }
+            else{  Write-Host "Adapter VMName $AzSHOST Name StorageB exist." }             
+            
+        }
+
+        Get-VM $AzSHOST | Set-VMProcessor -ExposeVirtualizationExtensions $true
+        Get-VM $AzSHOST | Set-VMMemory -DynamicMemoryEnabled $false
+        Get-VM $AzSHOST | Get-VMNetworkAdapter | Set-VMNetworkAdapter -MacAddressSpoofing On
+
+        Set-VMNetworkAdapterVlan -VMName $AzSHOST -VMNetworkAdapterName SDN -Trunk -NativeVlanId 0 -AllowedVlanIdList 1-200
+        Set-VMNetworkAdapterVlan -VMName $AzSHOST -VMNetworkAdapterName SDN2 -Trunk -NativeVlanId 0 -AllowedVlanIdList 1-200  
+        
+        if ($AzSHOST -ne "AzSMGMT") {
+
+            Set-VMNetworkAdapterVlan -VMName $AzSHOST -VMNetworkAdapterName StorageA -Access -VlanId $SDNConfig.StorageAVLAN 
+            Set-VMNetworkAdapterVlan -VMName $AzSHOST -VMNetworkAdapterName StorageB -Access -VlanId $SDNConfig.StorageBVLAN 
+
+
+        }     
+        
+        Enable-VMIntegrationService -VMName $AzSHOST -Name "Guest Service Interface"
     }
 }
