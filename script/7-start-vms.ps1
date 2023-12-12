@@ -27,7 +27,6 @@ $AzSHOSTs = @("AzSMGMT", "AzSHOST1", "AzSHOST2")
 Write-Verbose "Generating Single Host Placement"
 
 $VMPlacement = @()
-$vmMacs = @()
 foreach ($AzSHOST in $AzSHOSTs) {
     $VMPlacement = $VMPlacement + [pscustomobject]@{AzSHOST = $AzSHOST; VMHost = $env:COMPUTERNAME }
 }
