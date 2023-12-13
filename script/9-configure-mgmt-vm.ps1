@@ -68,148 +68,148 @@ Invoke-Command -ComputerName azsmgmt -Credential $localCred  -ScriptBlock {
         $fabTwo = (Get-Netadapter -Name FABRIC2).Status 
 
     }
-    # # Enable WinRM on AzSMGMT
-    # $VerbosePreference = "Continue"
-    # Write-Verbose "Enabling PSRemoting on $env:COMPUTERNAME"
-    # $VerbosePreference = "SilentlyContinue"
-    # Set-Item WSMan:\localhost\Client\TrustedHosts *  -Confirm:$false -Force
-    # Enable-PSRemoting | Out-Null
+    # Enable WinRM on AzSMGMT
+    $VerbosePreference = "Continue"
+    Write-Verbose "Enabling PSRemoting on $env:COMPUTERNAME"
+    $VerbosePreference = "SilentlyContinue"
+    Set-Item WSMan:\localhost\Client\TrustedHosts *  -Confirm:$false -Force
+    Enable-PSRemoting | Out-Null
     
 
-    # #Disable ServerManager Auto-Start
+    #Disable ServerManager Auto-Start
 
-    # Get-ScheduledTask -TaskName ServerManager | Disable-ScheduledTask | Out-Null
+    Get-ScheduledTask -TaskName ServerManager | Disable-ScheduledTask | Out-Null
 
-    # # Create Hyper-V Networking for AzSMGMT
+    # Create Hyper-V Networking for AzSMGMT
 
-    # Import-Module Hyper-V 
+    Import-Module Hyper-V 
 
-    # Try {
+    Try {
 
-    #     $VerbosePreference = "Continue"
-    #     Write-Verbose "Creating VM Switch on $env:COMPUTERNAME"
+        $VerbosePreference = "Continue"
+        Write-Verbose "Creating VM Switch on $env:COMPUTERNAME"
 
-    #     New-VMSwitch  -AllowManagementOS $true -Name "vSwitch-Fabric" -NetAdapterName FABRIC -MinimumBandwidthMode None | Out-Null
+        New-VMSwitch  -AllowManagementOS $true -Name "vSwitch-Fabric" -NetAdapterName FABRIC -MinimumBandwidthMode None | Out-Null
 
-    #     # Configure NAT on AzSMGMT
+        # Configure NAT on AzSMGMT
 
-    #     if ($SDNConfig.natConfigure) {
+        if ($SDNConfig.natConfigure) {
 
-    #         Write-Verbose "Configuring NAT on $env:COMPUTERNAME"
+            Write-Verbose "Configuring NAT on $env:COMPUTERNAME"
 
-    #         $VerbosePreference = "SilentlyContinue"
+            $VerbosePreference = "SilentlyContinue"
 
-    #         $natSubnet = $SDNConfig.natSubnet
-    #         $Subnet = ($natSubnet.Split("/"))[0]
-    #         $Prefix = ($natSubnet.Split("/"))[1]
-    #         $natEnd = $Subnet.Split(".")
-    #         $natIP = ($natSubnet.TrimEnd("0./$Prefix")) + (".1")
-    #         $provIP = $SDNConfig.BGPRouterIP_ProviderNetwork.TrimEnd("1/24") + "254"
-    #         $vlan200IP = $SDNConfig.BGPRouterIP_VLAN200.TrimEnd("1/24") + "250"
-    #         $provGW = $SDNConfig.BGPRouterIP_ProviderNetwork.TrimEnd("/24")
-    #         $vlanGW = $SDNConfig.BGPRouterIP_VLAN200.TrimEnd("/24")
-    #         $provpfx = $SDNConfig.BGPRouterIP_ProviderNetwork.Split("/")[1]
-    #         $vlanpfx = $SDNConfig.BGPRouterIP_VLAN200.Split("/")[1]
-    #         $simInternetIP = $SDNConfig.BGPRouterIP_SimulatedInternet.TrimEnd("1/24") + "254"
-    #         $simInternetGW = $SDNConfig.BGPRouterIP_SimulatedInternet.TrimEnd("/24")
-    #         $simInternetPFX = $SDNConfig.BGPRouterIP_SimulatedInternet.Split("/")[1]
+            $natSubnet = $SDNConfig.natSubnet
+            $Subnet = ($natSubnet.Split("/"))[0]
+            $Prefix = ($natSubnet.Split("/"))[1]
+            $natEnd = $Subnet.Split(".")
+            $natIP = ($natSubnet.TrimEnd("0./$Prefix")) + (".1")
+            $provIP = $SDNConfig.BGPRouterIP_ProviderNetwork.TrimEnd("1/24") + "254"
+            $vlan200IP = $SDNConfig.BGPRouterIP_VLAN200.TrimEnd("1/24") + "250"
+            $provGW = $SDNConfig.BGPRouterIP_ProviderNetwork.TrimEnd("/24")
+            $vlanGW = $SDNConfig.BGPRouterIP_VLAN200.TrimEnd("/24")
+            $provpfx = $SDNConfig.BGPRouterIP_ProviderNetwork.Split("/")[1]
+            $vlanpfx = $SDNConfig.BGPRouterIP_VLAN200.Split("/")[1]
+            $simInternetIP = $SDNConfig.BGPRouterIP_SimulatedInternet.TrimEnd("1/24") + "254"
+            $simInternetGW = $SDNConfig.BGPRouterIP_SimulatedInternet.TrimEnd("/24")
+            $simInternetPFX = $SDNConfig.BGPRouterIP_SimulatedInternet.Split("/")[1]
 
-    #         New-VMSwitch -SwitchName NAT -SwitchType Internal -MinimumBandwidthMode None | Out-Null
-    #         New-NetIPAddress -IPAddress $natIP -PrefixLength $Prefix -InterfaceAlias "vEthernet (NAT)" | Out-Null
-    #         New-NetNat -Name NATNet -InternalIPInterfaceAddressPrefix $natSubnet | Out-Null
+            New-VMSwitch -SwitchName NAT -SwitchType Internal -MinimumBandwidthMode None | Out-Null
+            New-NetIPAddress -IPAddress $natIP -PrefixLength $Prefix -InterfaceAlias "vEthernet (NAT)" | Out-Null
+            New-NetNat -Name NATNet -InternalIPInterfaceAddressPrefix $natSubnet | Out-Null
 
-    #         $VerbosePreference = "Continue"
-    #         Write-Verbose "Configuring Provider NIC on $env:COMPUTERNAME"
-    #         $VerbosePreference = "SilentlyContinue"
+            $VerbosePreference = "Continue"
+            Write-Verbose "Configuring Provider NIC on $env:COMPUTERNAME"
+            $VerbosePreference = "SilentlyContinue"
 
-    #         $NIC = Get-NetAdapterAdvancedProperty -RegistryKeyWord "HyperVNetworkAdapterName" | Where-Object { $_.RegistryValue -eq "PROVIDER" }
-    #         Rename-NetAdapter -name $NIC.name -newname "PROVIDER" | Out-Null
-    #         New-NetIPAddress -InterfaceAlias "PROVIDER" –IPAddress $provIP -PrefixLength $provpfx | Out-Null
+            $NIC = Get-NetAdapterAdvancedProperty -RegistryKeyWord "HyperVNetworkAdapterName" | Where-Object { $_.RegistryValue -eq "PROVIDER" }
+            Rename-NetAdapter -name $NIC.name -newname "PROVIDER" | Out-Null
+            New-NetIPAddress -InterfaceAlias "PROVIDER" –IPAddress $provIP -PrefixLength $provpfx | Out-Null
 
-    #         <#
-    #         $index = (Get-WmiObject Win32_NetworkAdapter | Where-Object { $_.netconnectionid -eq "PROVIDER" }).InterfaceIndex
-    #         $NetInterface = Get-WmiObject Win32_NetworkAdapterConfiguration | Where-Object { $_.InterfaceIndex -eq $index }     
-    #         $NetInterface.SetGateways($tranpfx) | Out-Null
-    #         #>
+            <#
+            $index = (Get-WmiObject Win32_NetworkAdapter | Where-Object { $_.netconnectionid -eq "PROVIDER" }).InterfaceIndex
+            $NetInterface = Get-WmiObject Win32_NetworkAdapterConfiguration | Where-Object { $_.InterfaceIndex -eq $index }     
+            $NetInterface.SetGateways($tranpfx) | Out-Null
+            #>
 
-    #         $VerbosePreference = "Continue"
-    #         Write-Verbose "Configuring VLAN200 NIC on $env:COMPUTERNAME"
-    #         $VerbosePreference = "SilentlyContinue"
+            $VerbosePreference = "Continue"
+            Write-Verbose "Configuring VLAN200 NIC on $env:COMPUTERNAME"
+            $VerbosePreference = "SilentlyContinue"
 
-    #         $NIC = Get-NetAdapterAdvancedProperty -RegistryKeyWord "HyperVNetworkAdapterName" | Where-Object { $_.RegistryValue -eq "VLAN200" }
-    #         Rename-NetAdapter -name $NIC.name -newname "VLAN200" | Out-Null
-    #         New-NetIPAddress -InterfaceAlias "VLAN200" –IPAddress $vlan200IP -PrefixLength $vlanpfx | Out-Null
+            $NIC = Get-NetAdapterAdvancedProperty -RegistryKeyWord "HyperVNetworkAdapterName" | Where-Object { $_.RegistryValue -eq "VLAN200" }
+            Rename-NetAdapter -name $NIC.name -newname "VLAN200" | Out-Null
+            New-NetIPAddress -InterfaceAlias "VLAN200" –IPAddress $vlan200IP -PrefixLength $vlanpfx | Out-Null
 
-    #         <#
-    #         $index = (Get-WmiObject Win32_NetworkAdapter | Where-Object { $_.netconnectionid -eq "VLAN200" }).InterfaceIndex
-    #         $NetInterface = Get-WmiObject Win32_NetworkAdapterConfiguration | Where-Object { $_.InterfaceIndex -eq $index }     
-    #         $NetInterface.SetGateways($vlanGW) | Out-Null
-    #         #>
+            <#
+            $index = (Get-WmiObject Win32_NetworkAdapter | Where-Object { $_.netconnectionid -eq "VLAN200" }).InterfaceIndex
+            $NetInterface = Get-WmiObject Win32_NetworkAdapterConfiguration | Where-Object { $_.InterfaceIndex -eq $index }     
+            $NetInterface.SetGateways($vlanGW) | Out-Null
+            #>
 
-    #         $VerbosePreference = "Continue"
-    #         Write-Verbose "Configuring simulatedInternet NIC on $env:COMPUTERNAME"
-    #         $VerbosePreference = "SilentlyContinue"
-
-
-    #         $NIC = Get-NetAdapterAdvancedProperty -RegistryKeyWord "HyperVNetworkAdapterName" | Where-Object { $_.RegistryValue -eq "simInternet" }
-    #         Rename-NetAdapter -name $NIC.name -newname "simInternet" | Out-Null
-    #         New-NetIPAddress -InterfaceAlias "simInternet" –IPAddress $simInternetIP -PrefixLength $simInternetPFX | Out-Null
-
-    #         <#
-    #         $index = (Get-WmiObject Win32_NetworkAdapter | Where-Object { $_.netconnectionid -eq "simInternet" }).InterfaceIndex
-    #         $NetInterface = Get-WmiObject Win32_NetworkAdapterConfiguration | Where-Object { $_.InterfaceIndex -eq $index }     
-    #         $NetInterface.SetGateways($simInternetGW) | Out-Null
-    #         #>
-
-    #         Write-Verbose "Making NAT Work"
+            $VerbosePreference = "Continue"
+            Write-Verbose "Configuring simulatedInternet NIC on $env:COMPUTERNAME"
+            $VerbosePreference = "SilentlyContinue"
 
 
-    #         $NIC = Get-NetAdapterAdvancedProperty -RegistryKeyWord "HyperVNetworkAdapterName" `
-    #         | Where-Object { $_.RegistryValue -eq "Network Adapter" -or $_.RegistryValue -eq "NAT" }
+            $NIC = Get-NetAdapterAdvancedProperty -RegistryKeyWord "HyperVNetworkAdapterName" | Where-Object { $_.RegistryValue -eq "simInternet" }
+            Rename-NetAdapter -name $NIC.name -newname "simInternet" | Out-Null
+            New-NetIPAddress -InterfaceAlias "simInternet" –IPAddress $simInternetIP -PrefixLength $simInternetPFX | Out-Null
 
-    #         Rename-NetAdapter -name $NIC.name -newname "Internet" | Out-Null 
+            <#
+            $index = (Get-WmiObject Win32_NetworkAdapter | Where-Object { $_.netconnectionid -eq "simInternet" }).InterfaceIndex
+            $NetInterface = Get-WmiObject Win32_NetworkAdapterConfiguration | Where-Object { $_.InterfaceIndex -eq $index }     
+            $NetInterface.SetGateways($simInternetGW) | Out-Null
+            #>
 
-    #         $internetIP = $SDNConfig.natHostSubnet.Replace("0/24", "5")
-    #         $internetGW = $SDNConfig.natHostSubnet.Replace("0/24", "1")
+            Write-Verbose "Making NAT Work"
 
-    #         Start-Sleep -Seconds 30
 
-    #         $internetIndex = (Get-NetAdapter | Where-Object { $_.Name -eq "Internet" }).ifIndex
+            $NIC = Get-NetAdapterAdvancedProperty -RegistryKeyWord "HyperVNetworkAdapterName" `
+            | Where-Object { $_.RegistryValue -eq "Network Adapter" -or $_.RegistryValue -eq "NAT" }
 
-    #         Start-Sleep -Seconds 30
+            Rename-NetAdapter -name $NIC.name -newname "Internet" | Out-Null 
 
-    #         New-NetIPAddress -IPAddress $internetIP -PrefixLength 24 -InterfaceIndex $internetIndex -DefaultGateway $internetGW -AddressFamily IPv4 | Out-Null
-    #         Set-DnsClientServerAddress -InterfaceIndex $internetIndex -ServerAddresses ($SDNConfig.natDNS) | Out-Null
+            $internetIP = $SDNConfig.natHostSubnet.Replace("0/24", "5")
+            $internetGW = $SDNConfig.natHostSubnet.Replace("0/24", "1")
 
-    #         #Enable Large MTU
+            Start-Sleep -Seconds 30
 
-    #         $VerbosePreference = "Continue"
-    #         Write-Verbose "Configuring MTU on all Adapters"
-    #         $VerbosePreference = "SilentlyContinue"
-    #         Get-NetAdapter | Where-Object { $_.Status -eq "Up" -and $_.Name -ne "Ethernet" } | Set-NetAdapterAdvancedProperty `
-    #             -RegistryValue $SDNConfig.SDNLABMTU -RegistryKeyword "*JumboPacket"
-    #         $VerbosePreference = "Continue"
+            $internetIndex = (Get-NetAdapter | Where-Object { $_.Name -eq "Internet" }).ifIndex
 
-    #         Start-Sleep -Seconds 30
+            Start-Sleep -Seconds 30
 
-    #         #Provision Public and Private VIP Route
+            New-NetIPAddress -IPAddress $internetIP -PrefixLength 24 -InterfaceIndex $internetIndex -DefaultGateway $internetGW -AddressFamily IPv4 | Out-Null
+            Set-DnsClientServerAddress -InterfaceIndex $internetIndex -ServerAddresses ($SDNConfig.natDNS) | Out-Null
 
-    #         New-NetRoute -DestinationPrefix $SDNConfig.PublicVIPSubnet -NextHop $provGW -InterfaceAlias PROVIDER | Out-Null
+            #Enable Large MTU
 
-    #         # Remove Gateway from Fabric NIC
-    #         Write-Verbose "Removing Gateway from Fabric NIC" 
-    #         $index = (Get-WmiObject Win32_NetworkAdapter | Where-Object { $_.netconnectionid -match "vSwitch-Fabric" }).InterfaceIndex
-    #         Remove-NetRoute -InterfaceIndex $index -DestinationPrefix "0.0.0.0/0" -Confirm:$false
+            $VerbosePreference = "Continue"
+            Write-Verbose "Configuring MTU on all Adapters"
+            $VerbosePreference = "SilentlyContinue"
+            Get-NetAdapter | Where-Object { $_.Status -eq "Up" -and $_.Name -ne "Ethernet" } | Set-NetAdapterAdvancedProperty `
+                -RegistryValue $SDNConfig.SDNLABMTU -RegistryKeyword "*JumboPacket"
+            $VerbosePreference = "Continue"
 
-    #     }
+            Start-Sleep -Seconds 30
 
-    # }
+            #Provision Public and Private VIP Route
 
-    # Catch {
+            New-NetRoute -DestinationPrefix $SDNConfig.PublicVIPSubnet -NextHop $provGW -InterfaceAlias PROVIDER | Out-Null
 
-    #     throw $_
+            # Remove Gateway from Fabric NIC
+            Write-Verbose "Removing Gateway from Fabric NIC" 
+            $index = (Get-WmiObject Win32_NetworkAdapter | Where-Object { $_.netconnectionid -match "vSwitch-Fabric" }).InterfaceIndex
+            Remove-NetRoute -InterfaceIndex $index -DestinationPrefix "0.0.0.0/0" -Confirm:$false
 
-    # }
+        }
+
+    }
+
+    Catch {
+
+        throw $_
+
+    }
 
 }
 

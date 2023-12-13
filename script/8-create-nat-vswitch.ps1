@@ -98,5 +98,3 @@ if ($natConfigure) {
     else { Write-Host "Adapter VMName "$natSwitchTarget.AzSHOST" Name simInternet exist." } 
 
 }
-
-simInternet
